@@ -1,0 +1,27 @@
+{
+  "type": "module",
+  "name": "chat-server",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "gen": "npx prisma generate",
+    "mig": "npx prisma migrate dev --name chat",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
+    "@quixo3/prisma-session-store": "^3.1.16",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-session": "^1.18.2",
+    "pg": "^8.16.3",
+    "prisma": "^7.2.0",
+    "ws": "^8.18.3"
+  }
+}

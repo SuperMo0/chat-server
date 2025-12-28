@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model users {
+  id         Int     @id @default(autoincrement())
+  email      String  @unique
+  password   String
+  name       String
+  image      String
+  status     String
+  friends_to users[] @relation("friends")
+  friends_by users[] @relation("friends")
+
+  chats_first  chats[]           @relation("first")
+  chats_second chats[]           @relation("second")
+  messages     messages[]
+  globals      global_messages[]
+}
+
+model chats {
+  id       Int        @id @default(autoincrement())
+  user1    users      @relation("first", fields: [user1_id], references: [id])
+  user1_id Int
+  user2    users      @relation("second", fields: [user2_id], references: [id])
+  user2_id Int
+  messages messages[] @relation("chat_messages")
+}
+
+model messages {
+  id         Int      @id @default(autoincrement())
+  content    String
+  chats      chats    @relation("chat_messages", fields: [chatsId], references: [id])
+  chatsId    Int
+  users      users    @relation(fields: [usersId], references: [id])
+  usersId    Int
+  created_at DateTime @default(now())
+}
+
+model global_messages {
+  id         Int      @id @default(autoincrement())
+  content    String
+  users      users    @relation(fields: [usersId], references: [id])
+  usersId    Int
+  created_at DateTime @default(now())
+}
+
+model Session {
+  id        String   @id
+  sid       String   @unique
+  data      String
+  expiresAt DateTime
+}
