@@ -17,7 +17,7 @@ model users {
   id         Int     @id @default(autoincrement())
   email      String  @unique
   password   String
-  name       String
+  name       String  @unique
   image      String
   status     String
   friends_to users[] @relation("friends")

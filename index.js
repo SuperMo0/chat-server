@@ -37,15 +37,38 @@ let session = expressSession({
 
 app.use(session);
 
-app.post('/login', express.json(), (req, res) => {
-    req.session.user = { name: 'hany', email: 'hany@example.com', id: 7, image: 'https://i.pravatar.cc/150?u=hany' }
-    res.json({ message: 'ok' });
+app.post('/login', express.json(), async (req, res) => {
+
+    if (req.session.user) {
+        res.json({ user: req.session.user });
+        return;
+    }
+    else if (req.body.password == null) return res.status(400).json({ message: "no session" });
+    let name = req.body.email;
+    let password = req.body.password;
+
+    let user = await query.getUser(name, password);
+
+    if (user) {
+        req.session.user = user
+        res.json({ user });
+    }
+    else {
+        try {
+            let user = await query.insertNewUser(name, password);
+            req.session.user = user
+            res.json({ user });
+        } catch (error) {
+            res.status(400).json({ message: "already exist " });
+        }
+    }
 })
 
 app.get('/friends', async (req, res) => {
 
     let user = req.session.user;
     let friends = await query.getAllUserFriends(user.id);
+    friends.forEach((f) => { f.isOnline = true });
     res.json({ friends })
 })
 
@@ -58,9 +81,16 @@ app.get('/global', async (req, res) => {
 
 
 app.get('/chats/:friendId', async (req, res) => {
+
     let user = req.session.user;
     let friendId = req.params.friendId;
 
+    if (friendId == 0) {
+        let messages = await query.getAllGlobalMessages();
+
+        res.json({ messages });
+        return;
+    }
     let chatId = await query.getChatId(user.id, friendId);
     let messages = await query.getChatMessages(chatId);
 
@@ -89,22 +119,40 @@ server.on('upgrade', (req, socket, head) => {
     })
 })
 
+let sockets = new Map();
+
 webSocket.on('connection', async (ws, req) => {
     console.log('🌐 A client Connected');
     let user = req.session.user;
-
+    sockets.set(user.id, ws);
 
     ws.on('message', async function handleIncomingMessage(data) {
         data = JSON.parse(data.toString());
         const { content, receiver } = data;
 
-        let chatId = await query.getChatId(user.id, receiver);
+        if (receiver == 0) {
+            let message = await query.insertGlobalMessage(content, user.id);
+            console.log(message);
 
-        await query.insertNewMessage(chatId, content, user.id);
+            sockets.forEach((v, k) => {
+                v.send(JSON.stringify({ message, receiver: receiver }));
+            })
+            return;
+        }
+
+        let chatId = await query.getChatId(user.id, receiver);
+        let message = await query.insertNewMessage(chatId, content, user.id);
+        ws.send(JSON.stringify({ message, receiver: receiver }));
+        if (sockets.has(receiver)) {
+            sockets.get(receiver).send(JSON.stringify({ message, receiver: receiver }));
+        }
     })
 
+    ws.on('close', () => {
+        sockets.delete(user.id);
+        console.log('🔌 a Client disconnected');
 
-
+    })
 
 
 })

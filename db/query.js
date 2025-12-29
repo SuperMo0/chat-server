@@ -16,6 +16,13 @@ export async function getAllUserFriends(id) {
 
 export async function getAllGlobalMessages() {
     let data = await client.global_messages.findMany(
+        {
+            include: {
+                users: {
+                    select: { image: true, name: true }
+                }
+            }
+        }
     )
     return data;
 }
@@ -62,6 +69,82 @@ export async function insertNewMessage(chatId, content, userId) {
 
         }
     )
+    return res;
+}
+
+export async function insertNewUser(name, password) {
+    let image = `https://i.pravatar.cc/150?u=${name}`;
+    try {
+        let res = await client.users.create({
+            data: {
+                image: image,
+                name: name,
+                email: crypto.randomUUID(),
+                password: password,
+                status: "Hi I just joined Chat ",
+                friends_to: {
+                    connect: { id: 0 }
+                }
+            }
+        })
+
+    } catch (error) {
+        throw error;
+    }
+
+}
+
+export async function addFriend(id1, id2) {
+    let res = await client.users.update({
+        data: {
+            friends_to: { connect: { id: id2 } },
+            friends_by: { connect: { id: id2 } },
+        },
+        where: { id: id1 }
+
+    })
+}
+
+export async function getUser(name, password) {
+    let res = await client.users.findUnique({
+        where: {
+            name: name,
+            password: password,
+        },
+        select: {
+            name: true,
+            id: true,
+            image: true,
+            status: true,
+        }
+    })
+    return res;
+}
+
+
+export async function insertGlobalMessage(content, userId) {
+    let res = await client.global_messages.create({
+        data: {
+            content: content,
+            usersId: userId,
+        },
+        include: { users: { select: { image: true, name: true } } }
+    })
+    return res;
+}
+
+/*export async function f() {
+    let res = await client.users.update({
+        data: {
+            friends_to: { connect: { id: 0 } },
+        },
+        where: { id: 8 }
+    })
     console.log(res);
 
 }
+f();*/
+
+
+
+
