@@ -35,6 +35,8 @@ model chats {
   user2    users      @relation("second", fields: [user2_id], references: [id])
   user2_id Int
   messages messages[] @relation("chat_messages")
+
+  @@unique([user1_id, user2_id])
 }
 
 model messages {

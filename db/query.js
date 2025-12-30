@@ -31,14 +31,12 @@ export async function getChatId(id1, id2) {
 
     id1 = Number(id1);
     id2 = Number(id2);
+    if (id1 > id2) [id1, id2] = [id2, id1];
     try {
         let data = await client.chats.findFirst({
             select: { id: true },
             where: {
-                OR: [
-                    { AND: [{ user1_id: id1 }, { user2_id: id2 }] },
-                    { AND: [{ user1_id: id2 }, { user2_id: id1 }] }
-                ]
+                AND: [{ user1_id: id1 }, { user2_id: id2 }],
             }
         })
 
@@ -105,14 +103,17 @@ export async function insertNewUser(name, password) {
 export async function addFriend(id1, id2) {
     id1 = Number(id1);
     id2 = Number(id2);
+    if (id1 > id2) [id1, id2] = [id2, id1];
     let res = await client.users.update({
+        where: { id: id1 },
         data: {
             friends_to: { connect: { id: id2 } },
             friends_by: { connect: { id: id2 } },
-            chats_first: { create: { user2: id2 } },
-            chats_second: { create: { user1: id1 } }
         },
-        where: { id: id1 }
+    })
+
+    res = await client.chats.create({
+        data: { user1_id: id1, user2_id: id2 }
     })
 }
 
