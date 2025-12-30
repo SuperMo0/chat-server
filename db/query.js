@@ -27,30 +27,35 @@ export async function getAllGlobalMessages() {
     return data;
 }
 
-
 export async function getChatId(id1, id2) {
 
     id1 = Number(id1);
     id2 = Number(id2);
+    try {
+        let data = await client.chats.findFirst({
+            select: { id: true },
+            where: {
+                OR: [
+                    { AND: [{ user1_id: id1 }, { user2_id: id2 }] },
+                    { AND: [{ user1_id: id2 }, { user2_id: id1 }] }
+                ]
+            }
+        })
 
-    let data = await client.chats.findFirst({
-        select: { id: true },
-        where: {
-            OR: [
-                { AND: [{ user1_id: id1 }, { user2_id: id2 }] },
-                { AND: [{ user1_id: id2 }, { user2_id: id1 }] }
-            ]
-        }
-    })
-    return data.id;
+        return data.id;
+
+    } catch (error) {
+        console.error(error);
+    }
+
 }
 
-export async function getChatMessages(id = 0) {
-    id = Number(id);
+export async function getChatMessages(chatId) {
+    chatId = Number(chatId);
     let data = await client.chats.findUnique(
         {
-            include: { messages: { orderBy: { created_at: 'asc' } } },
-            where: { id: id },
+            include: { messages: { orderBy: { created_at: 'asc' }, include: { users: { select: { id: true, image: true, name: true } } } } },
+            where: { id: chatId },
         }
     )
     return data.messages;
@@ -88,6 +93,8 @@ export async function insertNewUser(name, password) {
             }
         })
 
+        return res;
+
     } catch (error) {
         throw error;
     }
@@ -99,9 +106,10 @@ export async function addFriend(id1, id2) {
         data: {
             friends_to: { connect: { id: id2 } },
             friends_by: { connect: { id: id2 } },
+            chats_first: { create: { user2_id: id2 } },
+            chats_second: { create: { user1_id: id1 } }
         },
         where: { id: id1 }
-
     })
 }
 

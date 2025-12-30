@@ -14,15 +14,14 @@ datasource db {
 }
 
 model users {
-  id         Int     @id @default(autoincrement())
-  email      String  @unique
-  password   String
-  name       String  @unique
-  image      String
-  status     String
-  friends_to users[] @relation("friends")
-  friends_by users[] @relation("friends")
-
+  id           Int               @id @default(autoincrement())
+  email        String            @unique
+  password     String
+  name         String            @unique
+  image        String
+  status       String
+  friends_to   users[]           @relation("friends")
+  friends_by   users[]           @relation("friends")
   chats_first  chats[]           @relation("first")
   chats_second chats[]           @relation("second")
   messages     messages[]
