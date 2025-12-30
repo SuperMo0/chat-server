@@ -6,8 +6,8 @@ export async function getAllUserFriends(id) {
 
     let data = await client.users.findMany(
         {
-            include: { friends_to: true },
-            where: { id: id }
+            include: { friends_to: { select: { name: true, email: true, image: true, id: true, status: true } } },
+            where: { id: id },
         }
     )
 
@@ -90,7 +90,8 @@ export async function insertNewUser(name, password) {
                 friends_to: {
                     connect: { id: 0 }
                 }
-            }
+            },
+            select: { name: true, email: true, image: true, id: true, status: true }
         })
 
         return res;
@@ -102,12 +103,14 @@ export async function insertNewUser(name, password) {
 }
 
 export async function addFriend(id1, id2) {
+    id1 = Number(id1);
+    id2 = Number(id2);
     let res = await client.users.update({
         data: {
             friends_to: { connect: { id: id2 } },
             friends_by: { connect: { id: id2 } },
-            chats_first: { create: { user2_id: id2 } },
-            chats_second: { create: { user1_id: id1 } }
+            chats_first: { create: { user2: id2 } },
+            chats_second: { create: { user1: id1 } }
         },
         where: { id: id1 }
     })
@@ -137,6 +140,24 @@ export async function insertGlobalMessage(content, userId) {
             usersId: userId,
         },
         include: { users: { select: { image: true, name: true } } }
+    })
+    return res;
+}
+
+export async function getAllUsers(userId) {
+    let res = await client.users.findMany({
+        select: {
+            name: true,
+            id: true,
+            image: true,
+            status: true,
+        },
+        where: {
+            id: { not: userId },
+            friends_to: {
+                none: { id: userId }
+            }
+        }
     })
     return res;
 }

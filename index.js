@@ -66,11 +66,28 @@ app.get('/friends', async (req, res) => {
     res.json({ friends });
 })
 
+app.get('/people', async (req, res) => {
+    let user = req.session.user;
+    if (!user) return res.status(401).json({ message: 'unauthorized' });
+
+    let people = await query.getAllUsers();
+
+    res.json({ people });
+})
+
+app.post('/friends/:friendId', async (req, res) => {
+    let user = req.session.user;
+    if (!user) return res.status(401).json({ message: 'unauthorized' });
+    let friendId = req.params.friendId;
+    await query.addFriend(user.id, friendId);
+    res.send({ message: 'ok' });
+})
+
 
 app.get('/chats/:chatId', async (req, res) => {
     let user = req.session.user;
 
-    if (!user) return res.status(400);
+    if (!user) return res.status(401);
 
     let chatId = req.params.chatId;
 
@@ -101,11 +118,13 @@ server.on('upgrade', (req, socket, head) => {
 
 webSocket.on('connection', async (req, ws) => {
 
-    console.log(`🌐 A client Connected Current Users ${sockets.size}`);
-
     const user = req.session.user;
 
     sockets.set(user.id, ws);
+
+    console.log(`🌐 A client Connected Current Users ${sockets.size}`);
+
+
 
     ws.on('message', async function handleIncomingMessage(data) {
 
