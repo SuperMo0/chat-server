@@ -29,4 +29,4 @@ This project is a **prototype** created primarily to explore the implementation 
 ---
 
 ## 🔗 Repository
-**Backend Repository:** [https://github.com/SuperMo0/Chat-App)
+**Backend Repository:** https://github.com/SuperMo0/Chat-App
