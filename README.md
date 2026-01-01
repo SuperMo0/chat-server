@@ -1,6 +1,8 @@
-# [Project Name]
+# [real-time chat web app ]
 
 > A real-time messaging application built with **React** for the frontend, and **Express** & **WebSockets** for the backend.
+>
+> 
 ![ALT TEXT](./project-preview/image1.png)
 ![ALT TEXT](./project-preview/image3.png)
 ![ALT TEXT](./project-preview/image2.png)
