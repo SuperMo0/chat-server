@@ -68,21 +68,21 @@ export async function insertNewMessage(chatId, content, userId) {
                 content: content,
                 usersId: userId,
                 chatsId: chatId,
-            }
-
+            },
+            include: { users: { select: { name: true, email: true, image: true } } }
         }
     )
     return res;
 }
 
-export async function insertNewUser(name, password) {
+export async function insertNewUser(email, name, password) {
     let image = `https://i.pravatar.cc/150?u=${name}`;
     try {
         let res = await client.users.create({
             data: {
                 image: image,
                 name: name,
-                email: crypto.randomUUID(),
+                email: email,
                 password: password,
                 status: "Hi I just joined Chat ",
                 friends_to: {
@@ -101,8 +101,14 @@ export async function insertNewUser(name, password) {
 }
 
 export async function addFriend(id1, id2) {
+
     id1 = Number(id1);
     id2 = Number(id2);
+    let friend = await client.users.findUnique({
+        where: { id: id2 },
+        select: { name: true, email: true, image: true, id: true }
+    })
+
     if (id1 > id2) [id1, id2] = [id2, id1];
     let res = await client.users.update({
         where: { id: id1 },
@@ -115,12 +121,16 @@ export async function addFriend(id1, id2) {
     res = await client.chats.create({
         data: { user1_id: id1, user2_id: id2 }
     })
+    res.id
+
+    friend.chatId = res.id;
+    return friend;
 }
 
-export async function getUser(name, password) {
+export async function getUser(email, password) {
     let res = await client.users.findUnique({
         where: {
-            name: name,
+            email: email,
             password: password,
         },
         select: {
@@ -154,26 +164,47 @@ export async function getAllUsers(userId) {
             status: true,
         },
         where: {
-            id: { not: userId },
-            friends_to: {
-                none: { id: userId }
-            }
+            AND: {
+                id: { notIn: [0, userId] },
+                friends_to: {
+                    none: { id: userId }
+                }
+            },
         }
     })
     return res;
 }
 
-/*export async function f() {
-    let res = await client.users.update({
-        data: {
-            friends_to: { connect: { id: 0 } },
-        },
-        where: { id: 8 }
-    })
-    console.log(res);
+export async function updateUser(id, name, status, image) {
+
+    try {
+        id = Number(id);
+        let res = await client.users.update({
+            data: {
+                name: name,
+                status: status,
+                image: image,
+            },
+            select: {
+                name: true,
+                email: true,
+                image: true,
+                status: true,
+                id: true
+            },
+            where: {
+                id: id
+            }
+        })
+
+        return res;
+
+    } catch (error) {
+        throw error;
+
+    }
 
 }
-f();*/
 
 
 
